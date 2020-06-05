@@ -1,4 +1,6 @@
-# mdg:validated-method
+# npvn:validated-method
+
+> This fork makes ValidatedMethod compatible with enhanced methods provided by the `pub-sub-lite` package.
 
 ### Define Meteor methods in a structured way, with mixins
 

@@ -1,4 +1,5 @@
 import { check, Match } from 'meteor/check';
+import { PubSubLite } from 'meteor/npvn:pub-sub-lite';
 
 export class ValidatedMethod {
   constructor(options) {
@@ -8,10 +9,10 @@ export class ValidatedMethod {
     check(options.name, String);
     options = applyMixins(options, options.mixins);
 
-    if(options.connection) {
+    if (options.connection) {
       // Make sure we have a valid connection object
-      if(typeof options.connection !== 'object'
-      || !options.connection.methods) throw new Error('Invalid connection type');
+      if (typeof options.connection !== 'object' || !options.connection.methods)
+        throw new Error('Invalid connection type');
     } else {
       // connection argument defaults to Meteor, which is where Methods are defined on client and
       // server
@@ -26,13 +27,33 @@ export class ValidatedMethod {
     // If this is null/undefined, make it an empty object
     options.applyOptions = options.applyOptions || {};
 
-    check(options, Match.ObjectIncluding({
-      name: String,
-      validate: Function,
-      run: Function,
-      mixins: [Function],
-      applyOptions: Object,
-    }));
+    check(
+      options,
+      Match.ObjectIncluding({
+        name: String,
+        validate: Function,
+        run: Function,
+        mixins: [Function],
+        applyOptions: Object,
+      })
+    );
+
+    // Validation for pub-sub-lite enhanced method calls
+    if (
+      (options.applyOptions.cacheMethodResult ||
+        options.applyOptions.cacheMethodResultInMinimongo) &&
+      !options.applyOptions.enhanced
+    )
+      throw Error(
+        `Please also include { enhanced: true } in applyOptions of '${options.name}'.`
+      );
+    if (
+      options.applyOptions.cacheMethodResult &&
+      options.applyOptions.cacheMethodResultInMinimongo
+    )
+      throw Error(
+        `Please use either cacheMethodResult or cacheMethodResultInMinimongo for '${options.name}'.`
+      );
 
     // Default options passed to Meteor.apply, can be overridden with applyOptions
     const defaultApplyOptions = {
@@ -46,33 +67,57 @@ export class ValidatedMethod {
 
     options.applyOptions = {
       ...defaultApplyOptions,
-      ...options.applyOptions
+      ...options.applyOptions,
     };
 
     // Attach all options to the ValidatedMethod instance
     Object.assign(this, options);
 
     const method = this;
-    this.connection.methods({
+    // Support enhanced methods provided by the pub-sub-lite package
+    this.connection[
+      options.applyOptions.enhanced ? 'methodsEnhanced' : 'methods'
+    ]({
       [options.name](args) {
         // Silence audit-argument-checks since arguments are always checked when using this package
         check(args, Match.Any);
         const methodInvocation = this;
 
         return method._execute(methodInvocation, args);
-      }
+      },
     });
   }
 
   call(args, callback) {
     // Accept calling with just a callback
-    if ( typeof args === 'function' ) {
+    if (typeof args === 'function') {
       callback = args;
       args = {};
     }
 
+    const enhancedCallback = (error, result) => {
+      if (this.applyOptions.cacheMethodResult)
+        PubSubLite.cacheMethodResult({
+          name: this.name,
+          args: [args],
+          data: result,
+          durationMs: this.applyOptions.cacheDurationMs,
+        });
+      if (this.applyOptions.cacheMethodResultInMinimongo)
+        PubSubLite.cacheMethodResultInMinimongo({
+          name: this.name,
+          args: [args],
+          data: result,
+          collectionName: this.applyOptions.collectionName,
+          durationMs: this.applyOptions.cacheDurationMs,
+        });
+      callback?.(error, result);
+    };
+
     try {
-      return this.connection.apply(this.name, [args], this.applyOptions, callback);
+      return this.connection[
+        this.applyOptions.enhanced ? 'applyEnhanced' : 'apply'
+      ](this.name, [args], this.applyOptions, enhancedCallback);
     } catch (err) {
       if (callback) {
         // Get errors from the stub in the same way as from the server-side method
@@ -98,25 +143,27 @@ perhaps you meant to throw an error?`);
 
     return this.run.bind(methodInvocation)(args);
   }
-};
+}
 
 // Mixins get a chance to transform the arguments before they are passed to the actual Method
 function applyMixins(args, mixins) {
   // Save name of the method here, so we can attach it to potential error messages
   const { name } = args;
 
-  mixins.forEach((mixin) => {
+  mixins.forEach(mixin => {
     args = mixin(args);
 
-    if(!Match.test(args, Object)) {
+    if (!Match.test(args, Object)) {
       const functionName = mixin.toString().match(/function\s(\w+)/);
       let msg = 'One of the mixins';
 
-      if(functionName) {
+      if (functionName) {
         msg = `The function '${functionName[1]}'`;
       }
 
-      throw new Error(`Error in ${name} method: ${msg} didn't return the options object.`);
+      throw new Error(
+        `Error in ${name} method: ${msg} didn't return the options object.`
+      );
     }
   });
 

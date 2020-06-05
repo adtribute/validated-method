@@ -1,18 +1,15 @@
 Package.describe({
-  name: 'mdg:validated-method',
-  summary: 'A simple wrapper for Meteor.methods',
+  name: 'npvn:validated-method',
+  summary: "Support using pub-sub-lite's enhanced methods via ValidatedMethod",
   version: '1.2.0',
   documentation: 'README.md',
+  git: 'https://github.com/adtribute/validated-method',
 });
 
 Package.onUse(function (api) {
   api.versionsFrom('1.7');
 
-  api.use([
-    'ecmascript',
-    'check',
-    'ddp',
-  ]);
+  api.use(['ecmascript', 'check', 'ddp', 'npvn:pub-sub-lite']);
 
   api.mainModule('validated-method.js');
   api.export('ValidatedMethod');
@@ -24,8 +21,8 @@ Package.onTest(function (api) {
     'practicalmeteor:mocha@2.4.5_6',
     'practicalmeteor:chai@2.1.0_1',
     'aldeed:simple-schema@1.5.4',
-    'mdg:validated-method',
-    'random'
+    'npvn:validated-method',
+    'random',
   ]);
 
   api.mainModule('validated-method-tests.js');

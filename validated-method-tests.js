@@ -1,5 +1,5 @@
 import { Meteor } from 'meteor/meteor';
-import { ValidatedMethod } from 'meteor/mdg:validated-method';
+import { ValidatedMethod } from 'meteor/npvn:validated-method';
 import { SimpleSchema } from 'meteor/aldeed:simple-schema';
 import { assert } from 'meteor/practicalmeteor:chai';
 
@@ -8,7 +8,7 @@ const plainMethod = new ValidatedMethod({
   validate: new SimpleSchema({}).validator(),
   run() {
     return 'result';
-  }
+  },
 });
 
 const noArgsMethod = new ValidatedMethod({
@@ -16,7 +16,7 @@ const noArgsMethod = new ValidatedMethod({
   validate: null,
   run() {
     return 'result';
-  }
+  },
 });
 
 const methodWithArgs = new ValidatedMethod({
@@ -27,7 +27,7 @@ const methodWithArgs = new ValidatedMethod({
   }).validator(),
   run() {
     return 'result';
-  }
+  },
 });
 
 const methodThrowsImmediately = new ValidatedMethod({
@@ -35,7 +35,7 @@ const methodThrowsImmediately = new ValidatedMethod({
   validate: null,
   run() {
     throw new Meteor.Error('error');
-  }
+  },
 });
 
 const methodReturnsName = new ValidatedMethod({
@@ -43,7 +43,7 @@ const methodReturnsName = new ValidatedMethod({
   validate: null,
   run() {
     return this.name;
-  }
+  },
 });
 
 const methodWithSchemaMixin = new ValidatedMethod({
@@ -55,7 +55,7 @@ const methodWithSchemaMixin = new ValidatedMethod({
   }),
   run() {
     return 'result';
-  }
+  },
 });
 
 let resultReceived = false;
@@ -63,13 +63,13 @@ const methodWithApplyOptions = new ValidatedMethod({
   name: 'methodWithApplyOptions',
   validate: new SimpleSchema({}).validator(),
   applyOptions: {
-    onResultReceived: function() {
+    onResultReceived() {
       resultReceived = true;
-    }
+    },
   },
   run() {
     return 'result';
-  }
+  },
 });
 
 function schemaMixin(methodOptions) {
@@ -78,7 +78,7 @@ function schemaMixin(methodOptions) {
 }
 
 describe('mdg:method', () => {
-  it('defines a method that can be called', (done) => {
+  it('defines a method that can be called', done => {
     plainMethod.call({}, (error, result) => {
       assert.equal(result, 'result');
 
@@ -89,7 +89,7 @@ describe('mdg:method', () => {
     });
   });
 
-  it('allows methods that take no arguments', (done) => {
+  it('allows methods that take no arguments', done => {
     noArgsMethod.call((error, result) => {
       assert.equal(result, 'result');
 
@@ -100,28 +100,30 @@ describe('mdg:method', () => {
     });
   });
 
-
-  [methodWithArgs, methodWithSchemaMixin].forEach((method) => {
-    it('checks schema ' + method.name, (done) => {
+  [methodWithArgs, methodWithSchemaMixin].forEach(method => {
+    it('checks schema ' + method.name, done => {
       method.call({}, (error, result) => {
         // 2 invalid fields
         assert.equal(error.errors.length, 2);
 
-        method.call({
-          int: 5,
-          string: "what",
-        }, (error, result) => {
-          // All good!
-          assert.equal(result, 'result');
+        method.call(
+          {
+            int: 5,
+            string: 'what',
+          },
+          (error, result) => {
+            // All good!
+            assert.equal(result, 'result');
 
-          done();
-        });
+            done();
+          }
+        );
       });
     });
   });
 
-  it('throws error if no callback passed', (done) => {
-    methodThrowsImmediately.call({}, (err) => {
+  it('throws error if no callback passed', done => {
+    methodThrowsImmediately.call({}, err => {
       // If you pass a callback, you get the error in the callback
       assert.ok(err);
 
@@ -142,7 +144,7 @@ describe('mdg:method', () => {
         schema: null,
         run() {
           return 'result';
-        }
+        },
       });
     }, /Error in methodWithFaultySchemaMixin method: The function 'nonReturningFunction' didn't return the options object/);
 
@@ -153,12 +155,12 @@ describe('mdg:method', () => {
         schema: null,
         run() {
           return 'result';
-        }
+        },
       });
     }, /Error in methodWithFaultySchemaMixin method: One of the mixins didn't return the options object/);
   });
 
-  it('has access to the name on this.name', (done) => {
+  it('has access to the name on this.name', done => {
     const ret = methodReturnsName._execute();
     assert.equal(ret, 'methodReturnsName');
 
@@ -170,7 +172,7 @@ describe('mdg:method', () => {
     });
   });
 
-  it('can accept Meteor.apply options', (done) => {
+  it('can accept Meteor.apply options', done => {
     if (Meteor.isServer) {
       // the only apply option that I can think of to test is client side only
       return done();
