@@ -40,14 +40,6 @@ export class ValidatedMethod {
 
     // Validation for pub-sub-lite enhanced method calls
     if (
-      (options.applyOptions.cacheMethodResult ||
-        options.applyOptions.cacheMethodResultInMinimongo) &&
-      !options.applyOptions.enhanced
-    )
-      throw Error(
-        `Please also include { enhanced: true } in applyOptions of '${options.name}'.`
-      );
-    if (
       options.applyOptions.cacheMethodResult &&
       options.applyOptions.cacheMethodResultInMinimongo
     )
@@ -76,7 +68,11 @@ export class ValidatedMethod {
     const method = this;
     // Support enhanced methods provided by the pub-sub-lite package
     this.connection[
-      options.applyOptions.enhanced ? 'methodsEnhanced' : 'methods'
+      options.applyOptions.enhanced ||
+      options.applyOptions.cacheMethodResult ||
+      options.applyOptions.cacheMethodResultInMinimongo
+        ? 'methodsEnhanced'
+        : 'methods'
     ]({
       [options.name](args) {
         // Silence audit-argument-checks since arguments are always checked when using this package
@@ -94,6 +90,15 @@ export class ValidatedMethod {
       callback = args;
       args = {};
     }
+
+    // There's no method call caching on the server-side
+    if (Meteor.isServer)
+      return this.connection.apply(
+        this.name,
+        [args],
+        this.applyOptions,
+        callback
+      );
 
     const enhancedCallback = (error, result) => {
       if (this.applyOptions.cacheMethodResult)
@@ -116,7 +121,11 @@ export class ValidatedMethod {
 
     try {
       return this.connection[
-        this.applyOptions.enhanced ? 'applyEnhanced' : 'apply'
+        this.applyOptions.enhanced ||
+        this.applyOptions.cacheMethodResult ||
+        this.applyOptions.cacheMethodResultInMinimongo
+          ? 'applyEnhanced'
+          : 'apply'
       ](this.name, [args], this.applyOptions, enhancedCallback);
     } catch (err) {
       if (callback) {

@@ -1,7 +1,7 @@
 Package.describe({
   name: 'npvn:validated-method',
   summary: "Support using pub-sub-lite's enhanced methods via ValidatedMethod",
-  version: '1.2.0',
+  version: '1.2.3',
   documentation: 'README.md',
   git: 'https://github.com/adtribute/validated-method',
 });
