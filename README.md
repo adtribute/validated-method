@@ -1,6 +1,95 @@
-# npvn:validated-method
+# Enhanced Methods
 
-> This fork makes ValidatedMethod compatible with enhanced methods provided by the `pub-sub-lite` package.
+This fork makes `ValidatedMethod` compatible with enhanced Methods provided by the [pub-sub-lite](https://github.com/adtribute/pub-sub-lite) package.
+
+Enhanced Methods can be used by passing `{ enhanced: true }`, `{ cacheMethodResult: true }`, or `{ cacheMethodResultInMinimongo: true }` to the `applyOptions` of `ValidatedMethod`.
+
+### The `enhanced` option
+
+```js
+const method = new ValidatedMethod({
+  name, 
+  applyOptions: { enhanced: true }, 
+  run 
+});
+```
+
+This is equivalent to defining the Method with `Meteor.methodsEnhanced` and then 
+call it with `Meteor.applyEnhanced`.
+
+### The `cacheMethodResult` option
+
+```js
+const method = new ValidatedMethod({
+  name, 
+  applyOptions: { cacheMethodResult: true }, 
+  run 
+});
+```
+
+This is equivalent to defining the Method with `Meteor.methodsEnhanced`, calling 
+it with `Meteor.applyEnhanced`, and then calling `PubSubLite.cacheMethodResult`
+on the result data. This option should be used for Methods whose result data is 
+non-document. The data will be cached but will not be merged into Minimongo.
+
+### The `cacheMethodResultInMinimongo` option
+
+```js
+const method = new ValidatedMethod({
+  name, 
+  applyOptions: { 
+    cacheMethodResultInMinimongo: true,
+    // When result data is a document or an array of documents, a collection name
+    // must be provided for Minimongo merging
+    collectionName: 'collectionA',  
+  }, 
+  run 
+});
+```
+
+This is equivalent to defining the Method with `Meteor.methodsEnhanced`, calling 
+it with `Meteor.applyEnhanced`, and then calling `PubSubLite.cacheMethodResultInMinimongo`
+on the result data. Result data will be cached and merged with Minimongo.
+
+Result data can be either a document, an array of documents, or a dictionary of 
+collection names and their documents. When data is a document or an array of 
+documents, a `collectionName` key must also be defined in `applyOptions`.
+
+### Comparison
+
+- The `enhanced` option should be used when: 
+  - You can change the format of result data to a dictionary, and attach the `cacheMethodResultInMinimongo` key.
+  - You do not care about result data caching or Minimongo merging, and simply use enhanced methods for
+    getting mutation updates from the server.
+
+- The `cacheMethodResult` option should be used when result data is an arbitry value (not documents), but you still want the benefit of caching. 
+
+- The `cacheMethodResultInMinimongo` option should be used when:
+  - Your result data is a single document or an array of documents.
+  - Your result data is a dictionary, but attaching the `cacheMethodResultInMinimongo` is undesirable.
+  - *(In most case, it is more ideal and simpler to alter the result data format and use the `enhanced`
+    option instead)*
+
+### The `cacheDurationMs` option:
+
+Caching duration can be set individually for each Method:
+
+```js
+const method = new ValidatedMethod({
+  name, 
+  applyOptions: { 
+    cacheMethodResult: true,
+    cacheDurationMs: 60000, // Cache duration in millisecond, or 0 to disable caching
+  }, 
+  run 
+});
+```
+
+**For more information, see the [pub-sub-lite](https://github.com/adtribute/pub-sub-lite) package.**
+
+---
+
+# Original Documentation
 
 ### Define Meteor methods in a structured way, with mixins
 
