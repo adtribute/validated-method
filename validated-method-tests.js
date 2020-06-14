@@ -1,5 +1,5 @@
 import { Meteor } from 'meteor/meteor';
-import { ValidatedMethod } from 'meteor/npvn:validated-method';
+import { ValidatedMethod } from 'meteor/maestroqadev:validated-method';
 import { SimpleSchema } from 'meteor/aldeed:simple-schema';
 import { assert } from 'meteor/practicalmeteor:chai';
 

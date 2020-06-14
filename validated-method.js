@@ -1,5 +1,5 @@
 import { check, Match } from 'meteor/check';
-import { PubSubLite } from 'meteor/npvn:pub-sub-lite';
+import { PubSubLite } from 'meteor/maestroqadev:pub-sub-lite';
 
 export class ValidatedMethod {
   constructor(options) {

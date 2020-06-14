@@ -1,7 +1,7 @@
 Package.describe({
-  name: 'npvn:validated-method',
-  summary: "Support using pub-sub-lite's enhanced methods via ValidatedMethod",
-  version: '1.2.3',
+  name: 'maestroqadev:validated-method',
+  summary: "Support using pub-sub-lite's Enhanced Methods via ValidatedMethod",
+  version: '1.2.0',
   documentation: 'README.md',
   git: 'https://github.com/adtribute/validated-method',
 });
@@ -9,7 +9,7 @@ Package.describe({
 Package.onUse(function (api) {
   api.versionsFrom('1.7');
 
-  api.use(['ecmascript', 'check', 'ddp', 'npvn:pub-sub-lite']);
+  api.use(['ecmascript', 'check', 'ddp', 'maestroqadev:pub-sub-lite@1.0.0']);
 
   api.mainModule('validated-method.js');
   api.export('ValidatedMethod');
@@ -21,7 +21,7 @@ Package.onTest(function (api) {
     'practicalmeteor:mocha@2.4.5_6',
     'practicalmeteor:chai@2.1.0_1',
     'aldeed:simple-schema@1.5.4',
-    'npvn:validated-method',
+    'maestroqadev:validated-method',
     'random',
   ]);
 
